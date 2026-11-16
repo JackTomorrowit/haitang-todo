@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-session-bridge",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "description": "Session Bridge: lets an agent send one message to another conversation in a DSH workspace; the workspace root is configurable in plugin settings.",
   "license": "MIT",
