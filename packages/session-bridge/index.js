@@ -16,21 +16,35 @@
 import { randomUUID } from 'node:crypto'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import z from '@deepseek-ai/schemastery'
 
 export const name = 'session-bridge'
 export const inject = ['tools', 'sessionController']
 
-export const Config = z.object({
-  workspaceRoot: z
-    .string()
-    .default('')
-    .description('要应用的工作区根目录（留空 = 当前进程工作目录，例如 D:\\dsh）'),
-  conversationsDir: z
-    .string()
-    .default('')
-    .description('对话根目录（留空 = <工作区>/conversations）'),
-})
+// The settings schema is optional: a workspace-linked copy may not be able to
+// resolve the host's @deepseek-ai/schemastery, while an npm-installed copy can.
+// Without it the settings form is absent, but workspaceRoot/conversationsDir
+// still come through the loader config when the host provides them.
+let schemastery = null
+try {
+  schemastery = await import('@deepseek-ai/schemastery')
+} catch {
+  schemastery = null
+}
+
+const z = schemastery && (schemastery.default || schemastery)
+
+export const Config = z
+  ? z.object({
+      workspaceRoot: z
+        .string()
+        .default('')
+        .description('要应用的工作区根目录（留空 = 当前进程工作目录，例如 D:\\dsh）'),
+      conversationsDir: z
+        .string()
+        .default('')
+        .description('对话根目录（留空 = <工作区>/conversations）'),
+    })
+  : undefined
 
 /** Candidate conversation roots, most specific first. */
 function candidateRoots(config) {
