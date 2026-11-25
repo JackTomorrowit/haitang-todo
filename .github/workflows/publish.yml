@@ -23,8 +23,28 @@ jobs:
         run: |
           PKG=$(node -p "require('./package.json').name")
           VER=$(node -p "require('./package.json').version")
-          if npm view "$PKG@$VER" version >/dev/null 2>&1; then
-            echo "$PKG@$VER already exists on npm - skipped"
+          echo "package=$PKG version=$VER"
+          set +e
+          VIEW=$(npm view "$PKG@$VER" version 2>&1)
+          VIEW_CODE=$?
+          echo "view exit=$VIEW_CODE output=$VIEW"
+          if [ "$VIEW_CODE" -eq 0 ]; then
+            MSG="$PKG@$VER already exists on npm - skipped"
+            echo "$MSG"
+            PUB_CODE=0
           else
-            npm publish --access public
+            PUB=$(npm publish --access public 2>&1)
+            PUB_CODE=$?
+            echo "$PUB"
           fi
+          {
+            echo "## publish result"
+            echo "- package: $PKG@$VER"
+            echo "- npm view exit: $VIEW_CODE"
+            echo "- npm publish exit: ${PUB_CODE:-n/a}"
+            echo '```'
+            echo "VIEW: $VIEW"
+            [ -n "$PUB" ] && echo "PUBLISH: $PUB"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit ${PUB_CODE:-1}
