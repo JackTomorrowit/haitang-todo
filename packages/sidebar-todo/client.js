@@ -14,7 +14,7 @@
  * imported without changing the workbench.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-plugin-sidebar-todo',
+  id: 'dsh-plugin-haitang-todo',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.15';
-    const CLIENT_BUILD = '2026-11-10T13:52';
+    const CLIENT_VERSION = '1.3.18';
+    const CLIENT_BUILD = '2026-11-25T10:32';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
@@ -46,6 +46,7 @@ window.__ModuleLoader__.load({
       periodTitle: 'Period view · calendar list',
       periodHint: 'Click a day header, empty space or the add zone to create a todo',
       monthView: 'Month view',
+      autoLayout: 'Auto',
       weekView: 'Week view',
       prev: 'Previous',
       next: 'Next',
@@ -163,6 +164,7 @@ window.__ModuleLoader__.load({
       categoryAdded: 'Added to ',
       itemUpdated: 'Updated',
       itemDeleted: 'Deleted',
+      itemTruncated: 'Deleted {date} and later',
       projectUpdated: 'Project updated',
       projectDeleted: 'Project deleted',
       recordUpdated: 'Record updated',
@@ -199,6 +201,7 @@ window.__ModuleLoader__.load({
       periodTitle: '周期视图 · 日历清单',
       periodHint: '单击日期标题栏、日期空白区域或添加按钮即可新增',
       monthView: '月度视图',
+      autoLayout: '自适应',
       weekView: '返回周视图',
       prev: '上一周',
       next: '下一周',
@@ -316,6 +319,7 @@ window.__ModuleLoader__.load({
       categoryAdded: '已添加到',
       itemUpdated: '已更新内容',
       itemDeleted: '内容已删除',
+      itemTruncated: '已删除 {date} 及以后',
       projectUpdated: '项目资料已更新',
       projectDeleted: '项目已删除',
       recordUpdated: '问题记录已更新',
@@ -386,13 +390,21 @@ window.__ModuleLoader__.load({
       '.dsh-todo-day--today .dsh-todo-day-head{color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-day-head b{display:block;font-size:17px;color:var(--dsw-alias-label-primary)}',
       '.dsh-todo-day--today .dsh-todo-day-head b{color:var(--dsw-alias-brand-primary)}',
-      '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0}',
+      '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;cursor:pointer;overflow:auto}',
       '.dsh-todo-task{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid var(--dsw-alias-brand-primary);',
       'border-radius:7px;background:var(--dsw-alias-bg-base);padding:7px 8px;font-size:11px;line-height:1.45;cursor:pointer}',
       '.dsh-todo-task:hover{background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-task{cursor:grab}',
       '.dsh-todo-task--dragging{opacity:.45;cursor:grabbing}',
       '.dsh-todo-day--drop{background:var(--dsw-alias-bg-layer-2);box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary)}',
+      '.dsh-todo-period-panel{display:flex;flex-direction:column;height:calc(100vh - 200px);height:calc(100dvh - 200px);min-height:420px;overflow:hidden}',
+      '.dsh-todo-period-body{flex:1 1 auto;min-height:0;overflow:auto}',
+      '.dsh-todo-weeks{display:flex;flex-direction:column;height:100%;min-height:0}',
+      '.dsh-todo-weeks .dsh-todo-week{flex:1 1 50%;display:flex;flex-direction:column;min-height:0}',
+      '.dsh-todo-weeks .dsh-todo-days{flex:1 1 auto;min-height:0}',
+      '.dsh-todo-period-panel .dsh-todo-day{min-height:0;overflow:hidden}',
+      '.dsh-todo-period-panel .dsh-todo-month{height:100%;overflow:auto}',
+      '.dsh-todo-period-panel .dsh-todo-month-grid>div{min-height:clamp(64px,calc((100dvh - 330px)/6),150px)}',
       '.dsh-todo-task--done{opacity:.5;text-decoration:line-through}',
       '.dsh-todo-task--overdue{border-left-color:var(--dsw-alias-state-warn-primary);',
       'color:var(--dsw-alias-state-warn-primary)}',
@@ -984,6 +996,7 @@ window.__ModuleLoader__.load({
         loaded: false,
         mainView: 'period',
         showMonth: false,
+        manualView: false,
         weekOffset: 0,
         monthOffset: 0,
         editorDay: '',
@@ -1233,6 +1246,7 @@ window.__ModuleLoader__.load({
         const start = parseDateKey(task.startDate);
         const current = new Date(date);
         if (current < start) return false;
+        if (task.until && keyOf(current) >= String(task.until)) return false;
         if (!task.repeat) return keyOf(current) === task.startDate;
         if (task.repeat === 'daily') return true;
         if (task.repeat === 'weekly') return current.getDay() === start.getDay();
@@ -1411,6 +1425,27 @@ window.__ModuleLoader__.load({
       };
       model.shiftMonth = (amount) => {
         model.monthOffset += amount;
+        model.bump();
+      };
+
+      /**
+       * Viewport-adaptive period layout: tall windows get the month view, short ones the
+       * two-week view. A manual toggle wins until the user clicks "自适应".
+       */
+      model.AUTO_MONTH_MIN_HEIGHT = 1000;
+      model.updateViewport = (height) => {
+        const viewportHeight = Number(height) || (typeof window !== 'undefined' ? Number(window.innerHeight) : 0) || 0;
+        if (!viewportHeight) return;
+        if (model.manualView) return;
+        const nextShowMonth = viewportHeight >= model.AUTO_MONTH_MIN_HEIGHT;
+        if (nextShowMonth !== model.showMonth) {
+          model.showMonth = nextShowMonth;
+          model.bump();
+        }
+      };
+      model.restoreAutoView = () => {
+        model.manualView = false;
+        model.updateViewport();
         model.bump();
       };
 
@@ -1756,6 +1791,29 @@ window.__ModuleLoader__.load({
       };
       model.deleteItem = (item) => {
         const source = model.taskSource(item);
+        const occurrenceKey = String((item && item.occurrenceKey) || '');
+        const sourceStart = String(source.startDate || '');
+        // A repeating task's occurrence: delete that day and everything after it, keeping history.
+        if (source.repeat && occurrenceKey) {
+          if (occurrenceKey <= sourceStart) {
+            const index = model.tasks.indexOf(source);
+            if (index >= 0) model.tasks.splice(index, 1);
+            model.schedulePersist();
+            model.showToast(tr('itemDeleted'));
+            model.bump();
+            return;
+          }
+          source.until = occurrenceKey;
+          if (source.completedDates && typeof source.completedDates === 'object') {
+            for (const key of Object.keys(source.completedDates)) {
+              if (key >= occurrenceKey) delete source.completedDates[key];
+            }
+          }
+          model.schedulePersist();
+          model.showToast(tr('itemTruncated').replace('{date}', occurrenceKey));
+          model.bump();
+          return;
+        }
         const index = model.tasks.indexOf(source);
         if (index >= 0) model.tasks.splice(index, 1);
         model.schedulePersist();
@@ -2435,6 +2493,24 @@ window.__ModuleLoader__.load({
             }
           });
 
+          // Keep the period layout tied to the real viewport: re-pick two-week/month on resize.
+          React.useEffect(() => {
+            const apply = () => model.updateViewport();
+            apply();
+            if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+              const onResize = () => apply();
+              window.addEventListener('resize', onResize);
+              return () => {
+                try {
+                  window.removeEventListener('resize', onResize);
+                } catch (error) {
+                  /* ignore */
+                }
+              };
+            }
+            return undefined;
+          }, []);
+
           const backToChat = () => {
             try {
               ctx.layout.selectPanel(null);
@@ -2683,7 +2759,14 @@ window.__ModuleLoader__.load({
               ),
               h(
                 'div',
-                { className: 'dsh-todo-task-list' },
+                {
+                  className: 'dsh-todo-task-list',
+                  title: tr('addZone'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    model.openEditor(day);
+                  },
+                },
                 tasks.map((task) =>
                   h(
                     'div',
@@ -2752,11 +2835,23 @@ window.__ModuleLoader__.load({
                 type: 'button',
                 className: 'dsh-todo-action',
                 onClick: () => {
+                  model.manualView = true;
                   model.showMonth = !model.showMonth;
                   model.bump();
                 },
               },
               model.showMonth ? tr('weekView') : tr('monthView'),
+            ),
+            h(
+              'button',
+              {
+                key: 'auto',
+                type: 'button',
+                className: 'dsh-todo-action',
+                title: tr('autoLayout'),
+                onClick: () => model.restoreAutoView(),
+              },
+              tr('autoLayout'),
             ),
             h(
               'button',
@@ -2794,6 +2889,12 @@ window.__ModuleLoader__.load({
             ),
           ];
 
+          const monthDay = (date) => ({
+            key: keyOf(date),
+            date,
+            weekday: WEEKDAYS[date.getDay() === 0 ? 6 : date.getDay() - 1],
+          });
+
           const monthView = h(
             'div',
             { className: 'dsh-todo-month' },
@@ -2802,25 +2903,36 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-todo-month-grid' },
               WEEKDAYS.map((name) => h('div', { key: name, className: 'dsh-todo-month-weekday' }, name)),
-              model.monthCells().map((cell, index) =>
-                cell
-                  ? h(
-                      'div',
-                      { key: index, className: model.isToday(cell) ? 'dsh-todo-month-cell--today' : '' },
-                      h('b', null, String(cell.getDate())),
-                      model
-                        .tasksFor(cell)
-                        .slice(0, 2)
-                        .map((task) => h('span', { key: task.id, className: 'dsh-todo-month-task' }, task.text)),
-                    )
-                  : h('div', { key: index }),
-              ),
+              model.monthCells().map((cell, index) => {
+                if (!cell) return h('div', { key: index });
+                const editorOpen = model.editorDay === keyOf(cell);
+                return h(
+                  'div',
+                  {
+                    key: index,
+                    className: model.isToday(cell) ? 'dsh-todo-month-cell--today' : '',
+                    style: { cursor: 'pointer' },
+                    onClick: editorOpen
+                      ? undefined
+                      : (event) => {
+                          event.stopPropagation();
+                          model.openEditor(monthDay(cell));
+                        },
+                  },
+                  h('b', null, String(cell.getDate())),
+                  model
+                    .tasksFor(cell)
+                    .slice(0, editorOpen ? 0 : 2)
+                    .map((task) => h('span', { key: task.id, className: 'dsh-todo-month-task' }, task.text)),
+                  editorOpen ? renderTodoEditor(monthDay(cell)) : null,
+                );
+              }),
             ),
           );
 
           const weeksView = h(
             'div',
-            null,
+            { className: 'dsh-todo-weeks' },
             model.weekRows().map((row) =>
               h(
                 'div',
@@ -2833,14 +2945,14 @@ window.__ModuleLoader__.load({
 
           const periodSection = h(
             'section',
-            { className: 'dsh-todo-panel' },
+            { className: 'dsh-todo-panel dsh-todo-period-panel' },
             h(
               'div',
               { className: 'dsh-todo-section-head' },
               h('div', null, h('h2', null, tr('periodTitle')), h('span', { className: 'dsh-todo-muted' }, tr('periodHint'))),
               h('div', { className: 'dsh-todo-actions' }, periodActions),
             ),
-            model.showMonth ? monthView : weeksView,
+            h('div', { className: 'dsh-todo-period-body' }, model.showMonth ? monthView : weeksView),
             h('p', { className: 'dsh-todo-note' }, tr('periodNote')),
           );
 
