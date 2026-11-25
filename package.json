@@ -1,8 +1,8 @@
 {
-  "name": "sidebar-pro",
+  "name": "haitang-todo",
   "private": true,
   "version": "1.0.0",
-  "description": "DeepSeek Harness sidebar plugins: Sidebar Notes and Sidebar Todo.",
+  "description": "DeepSeek Harness plugins: Haitang Todo, Sidebar Notes and Session Bridge.",
   "license": "MIT",
   "workspaces": [
     "packages/*"
