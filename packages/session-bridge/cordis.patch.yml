@@ -1,4 +1,0 @@
-- insert:
-    - id: session-bridge
-      name: 'dsh-plugin-session-bridge'
-      config: {}

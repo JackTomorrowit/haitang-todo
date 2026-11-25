@@ -17,35 +17,7 @@ jobs:
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Publish sidebar-notes
-        working-directory: packages/sidebar-notes
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          PKG=$(node -p "require('./package.json').name")
-          VER=$(node -p "require('./package.json').version")
-          if npm view "$PKG@$VER" version >/dev/null 2>&1; then
-            echo "$PKG@$VER already exists on npm - skipped"
-          else
-            npm publish --access public
-          fi
-
-      - name: Publish sidebar-todo
-        working-directory: packages/sidebar-todo
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          PKG=$(node -p "require('./package.json').name")
-          VER=$(node -p "require('./package.json').version")
-          if npm view "$PKG@$VER" version >/dev/null 2>&1; then
-            echo "$PKG@$VER already exists on npm - skipped"
-          else
-            npm publish --access public
-          fi
-
-      - name: Publish session-bridge
-        working-directory: packages/session-bridge
+      - name: Publish haitang-todo
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
