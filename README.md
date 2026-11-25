@@ -17,16 +17,16 @@ DeepSeek Harness（DSH）插件合集，包含三个可直接安装的插件包�
 两个包已打成 tarball 放在本仓库 `dist/`：
 
 ```powershell
-dsh plugin add https://raw.githubusercontent.com/JackTomorrowit/sidebar-pro/main/dist/dsh-plugin-sidebar-notes.tgz
-dsh plugin add https://raw.githubusercontent.com/JackTomorrowit/sidebar-pro/main/dist/dsh-plugin-sidebar-todo.tgz
+dsh plugin add https://raw.githubusercontent.com/JackTomorrowit/haitang-todo/main/dist/dsh-plugin-sidebar-notes.tgz
+dsh plugin add https://raw.githubusercontent.com/JackTomorrowit/haitang-todo/main/dist/dsh-plugin-sidebar-todo.tgz
 ```
 
 若上面的命令不被识别，退化为：
 
 ```powershell
 # 在 profile 目录（%USERPROFILE%\.dsh\profiles\<profile>）执行
-npm install https://raw.githubusercontent.com/JackTomorrowit/sidebar-pro/main/dist/dsh-plugin-sidebar-todo.tgz
-npm install https://raw.githubusercontent.com/JackTomorrowit/sidebar-pro/main/dist/dsh-plugin-sidebar-notes.tgz
+npm install https://raw.githubusercontent.com/JackTomorrowit/haitang-todo/main/dist/dsh-plugin-sidebar-todo.tgz
+npm install https://raw.githubusercontent.com/JackTomorrowit/haitang-todo/main/dist/dsh-plugin-sidebar-notes.tgz
 # 再把 dsh-plugin-sidebar-notes / dsh-plugin-sidebar-todo 加进 package.json 的 dsh.profile.bundles，然后重启 DSH
 ```
 
@@ -43,7 +43,7 @@ dsh plugin add dsh-plugin-sidebar-todo
 
 ### 方式二：从 GitHub 手动安装
 
-1. `git clone https://github.com/JackTomorrowit/sidebar-pro`
+1. `git clone https://github.com/JackTomorrowit/haitang-todo`
 2. 把 `packages\sidebar-notes`、`packages\sidebar-todo` 复制到
    `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\` 下，
    目录名分别为 `dsh-plugin-sidebar-notes`、`dsh-plugin-sidebar-todo`
