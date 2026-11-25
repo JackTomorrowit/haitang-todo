@@ -7,12 +7,12 @@
   "author": "JackTomorrowit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JackTomorrowit/sidebar-pro.git",
+    "url": "https://github.com/JackTomorrowit/haitang-todo.git",
     "directory": "packages/session-bridge"
   },
-  "homepage": "https://github.com/JackTomorrowit/sidebar-pro/tree/main/packages/session-bridge",
+  "homepage": "https://github.com/JackTomorrowit/haitang-todo/tree/main/packages/session-bridge",
   "bugs": {
-    "url": "https://github.com/JackTomorrowit/sidebar-pro/issues"
+    "url": "https://github.com/JackTomorrowit/haitang-todo/issues"
   },
   "publishConfig": {
     "access": "public"
