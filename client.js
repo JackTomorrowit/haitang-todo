@@ -14,7 +14,7 @@
  * imported without changing the workbench.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-plugin-haitang-todo',
+  id: '@local/sidebar-todo',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.18';
-    const CLIENT_BUILD = '2026-11-25T10:32';
+    const CLIENT_VERSION = '1.3.31';
+    const CLIENT_BUILD = '2026-11-26T11:56';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
@@ -46,6 +46,7 @@ window.__ModuleLoader__.load({
       periodTitle: 'Period view · calendar list',
       periodHint: 'Click a day header, empty space or the add zone to create a todo',
       monthView: 'Month view',
+      monthDragRepeat: 'Repeating todos: change the repeat rule in the editor.',
       autoLayout: 'Auto',
       weekView: 'Week view',
       prev: 'Previous',
@@ -53,7 +54,6 @@ window.__ModuleLoader__.load({
       reset: 'Today',
       resetMonth: 'This month',
       addZone: 'Click to add a todo',
-      periodNote: 'Unfinished todos stay on their date and also appear on the next day; set repeats in the editor.',
       categoryTitle: 'Category view',
       categoryHint: 'Periodic and temporary work merge into this week, grouped by category',
       weekNumber: 'Week ',
@@ -130,18 +130,6 @@ window.__ModuleLoader__.load({
       meetingBatchSaved: 'Saved {n} meeting transcript(s)',
       meetingBatchFailed: 'Failed {m}',
       meetingNoSourceDate: 'no source date found; saving under today',
-      maintenanceEntry: 'Maintenance: .bin → text',
-      maintenanceTitle: 'Host copy: .bin/.txt → .md/.json/.txt/.log',
-      maintenanceSrc: 'Source path (.bin/.txt under D:\\dsh)',
-      maintenanceDest: 'Target path (.md/.json/.txt/.log/.bin under D:\\dsh)',
-      maintenanceKeepHint: 'The source file is never modified, moved or deleted.',
-      maintenanceSrcKept: 'Source kept: {path}',
-      maintenanceDestDone: 'Target: {path}',
-      maintenanceOverwrite: 'Overwrite if the target exists',
-      maintenanceRun: 'Convert',
-      maintenanceRunning: 'Converting…',
-      maintenanceOk: 'Converted: {bytes} bytes, sha256={sha256}',
-      maintenanceFailed: 'Convert failed',
       imported: 'Imported',
       catPeriodic: 'Periodic work',
       catMonthly: 'Monthly goals',
@@ -201,6 +189,7 @@ window.__ModuleLoader__.load({
       periodTitle: '周期视图 · 日历清单',
       periodHint: '单击日期标题栏、日期空白区域或添加按钮即可新增',
       monthView: '月度视图',
+      monthDragRepeat: '周期任务请在编辑里改重复规则',
       autoLayout: '自适应',
       weekView: '返回周视图',
       prev: '上一周',
@@ -208,7 +197,6 @@ window.__ModuleLoader__.load({
       reset: '回到今天',
       resetMonth: '回到本月',
       addZone: '单击添加待办',
-      periodNote: '未完成待办保留在原日期，并顺延显示在下一天；重复规则在待办编辑时设置。',
       categoryTitle: '象限视图',
       categoryHint: '周期性工作和临时性工作合并为本周周工作，按分类内容展示',
       weekNumber: '第',
@@ -285,18 +273,6 @@ window.__ModuleLoader__.load({
       meetingBatchSaved: '已保存 {n} 个会议纪要',
       meetingBatchFailed: '失败 {m} 个',
       meetingNoSourceDate: '未识别到源日期，按今天保存',
-      maintenanceEntry: '维护：.bin → 文本',
-      maintenanceTitle: '维护：把 .bin/.txt 转成 Host 可读文本',
-      maintenanceSrc: '源路径（D:\\dsh 下的 .bin/.txt）',
-      maintenanceDest: '目标路径（D:\\dsh 下的 .md/.json/.txt/.log 或 .bin）',
-      maintenanceKeepHint: '转换不会修改、移动或删除源文件。',
-      maintenanceSrcKept: '原文件已保留：{path}',
-      maintenanceDestDone: '目标文件：{path}',
-      maintenanceOverwrite: '目标已存在时覆盖',
-      maintenanceRun: '转换',
-      maintenanceRunning: '转换中…',
-      maintenanceOk: '已转换：{bytes} 字节，sha256={sha256}',
-      maintenanceFailed: '转换失败',
       imported: '已导入',
       catPeriodic: '周期性工作',
       catMonthly: '月目标',
@@ -384,27 +360,28 @@ window.__ModuleLoader__.load({
       '.dsh-todo-days{display:grid;grid-template-columns:repeat(7,minmax(102px,1fr));min-width:714px}',
       '.dsh-todo-day{border-right:1px solid var(--dsw-alias-border-l1);min-height:270px;cursor:pointer;display:flex;flex-direction:column}',
       '.dsh-todo-day:last-child{border-right:0}',
-      '.dsh-todo-day--today{background:var(--dsw-alias-bg-layer-2);box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary)}',
+      '.dsh-todo-day--today{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-state-success-primary);border-radius:6px}',
       '.dsh-todo-day-head{padding:9px 9px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:11px;',
       'color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-day--today .dsh-todo-day-head{color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-day-head b{display:block;font-size:17px;color:var(--dsw-alias-label-primary)}',
       '.dsh-todo-day--today .dsh-todo-day-head b{color:var(--dsw-alias-brand-primary)}',
-      '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;cursor:pointer;overflow:auto}',
+      '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;cursor:pointer}',
       '.dsh-todo-task{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid var(--dsw-alias-brand-primary);',
       'border-radius:7px;background:var(--dsw-alias-bg-base);padding:7px 8px;font-size:11px;line-height:1.45;cursor:pointer}',
       '.dsh-todo-task:hover{background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-task{cursor:grab}',
       '.dsh-todo-task--dragging{opacity:.45;cursor:grabbing}',
       '.dsh-todo-day--drop{background:var(--dsw-alias-bg-layer-2);box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary)}',
-      '.dsh-todo-period-panel{display:flex;flex-direction:column;height:calc(100vh - 200px);height:calc(100dvh - 200px);min-height:420px;overflow:hidden}',
-      '.dsh-todo-period-body{flex:1 1 auto;min-height:0;overflow:auto}',
-      '.dsh-todo-weeks{display:flex;flex-direction:column;height:100%;min-height:0}',
-      '.dsh-todo-weeks .dsh-todo-week{flex:1 1 50%;display:flex;flex-direction:column;min-height:0}',
-      '.dsh-todo-weeks .dsh-todo-days{flex:1 1 auto;min-height:0}',
-      '.dsh-todo-period-panel .dsh-todo-day{min-height:0;overflow:hidden}',
-      '.dsh-todo-period-panel .dsh-todo-month{height:100%;overflow:auto}',
-      '.dsh-todo-period-panel .dsh-todo-month-grid>div{min-height:clamp(64px,calc((100dvh - 330px)/6),150px)}',
+      '.dsh-todo-period-panel{display:flex;flex-direction:column;flex:0 0 auto;min-height:0;overflow:visible}',
+      '.dsh-todo-period-body{flex:1 1 auto;min-height:0;overflow:visible}',
+      '.dsh-todo-weeks{display:flex;flex-direction:column;min-height:0;gap:13px}',
+      '.dsh-todo-weeks .dsh-todo-week{flex:0 0 auto;display:flex;flex-direction:column;min-height:140px}',
+      '.dsh-todo-weeks .dsh-todo-days{flex:0 0 auto;min-height:0;overflow:visible}',
+      '.dsh-todo-period-panel .dsh-todo-day{min-height:0;overflow:visible;box-sizing:border-box}',
+      '.dsh-todo-period-panel .dsh-todo-month{display:flex;flex-direction:column;min-height:0;overflow:visible;box-sizing:border-box}',
+      '.dsh-todo-period-panel .dsh-todo-month-grid{flex:0 0 auto;min-height:0;grid-template-rows:auto;grid-auto-rows:minmax(84px,auto);overflow:visible}',
+      '.dsh-todo-period-panel .dsh-todo-month-grid>div{min-height:84px;height:100%;box-sizing:border-box;overflow:visible;padding:4px 5px;align-self:stretch}',
       '.dsh-todo-task--done{opacity:.5;text-decoration:line-through}',
       '.dsh-todo-task--overdue{border-left-color:var(--dsw-alias-state-warn-primary);',
       'color:var(--dsw-alias-state-warn-primary)}',
@@ -451,9 +428,21 @@ window.__ModuleLoader__.load({
       'border-bottom:1px solid var(--dsw-alias-border-l1)}',
       '.dsh-todo-month-weekday{min-height:0!important;text-align:center;font-size:11px;font-weight:700;',
       'background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary)}',
-      '.dsh-todo-month-cell--today{background:var(--dsw-alias-bg-layer-2);box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary)}',
-      '.dsh-todo-month-task{display:block;margin-top:5px;padding:3px 5px;border-left:2px solid var(--dsw-alias-brand-primary);',
-      'border-radius:4px;background:var(--dsw-alias-bg-layer-2);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dsh-todo-month-cell--today{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-state-success-primary);border-radius:6px}',
+      '.dsh-todo-month-task{display:flex;align-items:center;gap:4px;margin-top:5px;padding:2px 4px;border-left:2px solid var(--dsw-alias-brand-primary);',
+      'border-radius:4px;background:var(--dsw-alias-bg-layer-2);font-size:10px;cursor:pointer}',
+      '.dsh-todo-month-task-text{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dsh-todo-month-task--done .dsh-todo-month-task-text{text-decoration:line-through;opacity:.62}',
+      '.dsh-todo-month-task-del{flex:none;display:none;border:0;background:transparent;color:var(--dsw-alias-state-error-primary);cursor:pointer;font-size:11px;line-height:1;padding:0 2px}',
+      '.dsh-todo-month-task:hover .dsh-todo-month-task-del,.dsh-todo-month-task:focus-within .dsh-todo-month-task-del{display:inline-block}',
+      '.dsh-todo-month-task--done{opacity:.85}',
+      '.dsh-todo-month-task--overdue{border-left-color:var(--dsw-alias-state-warn-primary);background:rgba(245,158,11,.16)}',
+      '.dsh-todo-month-task--today{border-left-color:var(--dsw-alias-state-success-primary)}',
+      '.dsh-todo-month-task--temporary{border-left-style:dashed}',
+      '.dsh-todo-month-cell--drop{box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-2)}',
+      '.dsh-todo-month-task{cursor:grab}',
+      '.dsh-todo-month-task--done{cursor:not-allowed}',
+      '.dsh-todo-month-task--dragging{opacity:.45}',
       '.dsh-todo-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px}',
       '.dsh-todo-lane{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;overflow:hidden;background:var(--dsw-alias-bg-base)}',
       '.dsh-todo-lane--fullscreen{position:fixed;inset:18px;z-index:30;overflow:auto;box-shadow:0 20px 60px #0006}',
@@ -2458,6 +2447,7 @@ window.__ModuleLoader__.load({
           const [composing, setComposing] = React.useState(false);
           const [dropActive, setDropActive] = React.useState(false);
           const meetingFileInputRef = React.useRef(null);
+          const periodRef = React.useRef(null);
           const modelRef = React.useRef(null);
           if (!modelRef.current) modelRef.current = createModel(tr);
           const model = modelRef.current;
@@ -2493,12 +2483,27 @@ window.__ModuleLoader__.load({
             }
           });
 
-          // Keep the period layout tied to the real viewport: re-pick two-week/month on resize.
+          // Period layout: fill the parent box when sparse, then grow with content.
+          // Day cells never scroll internally; overflow goes to the surrounding panel/page.
           React.useEffect(() => {
-            const apply = () => model.updateViewport();
-            apply();
+            const applyLayout = () => {
+              model.updateViewport();
+              const panel = periodRef.current;
+              if (!panel || typeof panel.getBoundingClientRect !== 'function') return;
+              // Never size the panel in pixels: it must grow with its content.
+              panel.style.height = '';
+              panel.style.minHeight = '';
+              panel.style.maxHeight = 'none';
+              const body = typeof panel.querySelector === 'function' ? panel.querySelector('.dsh-todo-period-body') : null;
+              if (body) body.style.overflowY = 'visible';
+            };
+            applyLayout();
+            let frame = 0;
+            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+              frame = window.requestAnimationFrame(applyLayout);
+            }
             if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-              const onResize = () => apply();
+              const onResize = () => applyLayout();
               window.addEventListener('resize', onResize);
               return () => {
                 try {
@@ -2506,10 +2511,11 @@ window.__ModuleLoader__.load({
                 } catch (error) {
                   /* ignore */
                 }
+                if (frame && typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame);
               };
             }
             return undefined;
-          }, []);
+          });
 
           const backToChat = () => {
             try {
@@ -2713,6 +2719,7 @@ window.__ModuleLoader__.load({
               {
                 key: day.key,
                 className: dayClass,
+                style: { height: 'auto', maxHeight: 'none', overflow: 'visible' },
                 onDragOver: (event) => {
                   if (!model.dragKey) return;
                   event.preventDefault();
@@ -2895,36 +2902,159 @@ window.__ModuleLoader__.load({
             weekday: WEEKDAYS[date.getDay() === 0 ? 6 : date.getDay() - 1],
           });
 
+          // Month cells reuse the week-view status rules: done / overdue / today / temporary.
+          const monthTaskClass = (task) => {
+            let name = 'dsh-todo-month-task';
+            if (model.isTaskDone(task)) {
+              name += ' dsh-todo-month-task--done';
+            } else {
+              const tone = model.itemTone(task, false);
+              if (tone === 'overdue') name += ' dsh-todo-month-task--overdue';
+              else if (tone === 'today') name += ' dsh-todo-month-task--today';
+            }
+            if (task.category === 'temporary') name += ' dsh-todo-month-task--temporary';
+            return name;
+          };
+
           const monthView = h(
             'div',
             { className: 'dsh-todo-month' },
             h('div', { className: 'dsh-todo-month-title' }, model.monthTitle()),
             h(
               'div',
-              { className: 'dsh-todo-month-grid' },
+              { className: 'dsh-todo-month-grid', style: { gridTemplateRows: 'auto', gridAutoRows: 'minmax(84px, auto)', height: 'auto', overflow: 'visible' } },
               WEEKDAYS.map((name) => h('div', { key: name, className: 'dsh-todo-month-weekday' }, name)),
               model.monthCells().map((cell, index) => {
                 if (!cell) return h('div', { key: index });
-                const editorOpen = model.editorDay === keyOf(cell);
+                const cellKey = keyOf(cell);
+                const editorOpen = model.editorDay === cellKey;
+                let cellClass = model.isToday(cell) ? 'dsh-todo-month-cell--today' : '';
+                if (model.dragOverKey === cellKey) cellClass += ' dsh-todo-month-cell--drop';
                 return h(
                   'div',
                   {
                     key: index,
-                    className: model.isToday(cell) ? 'dsh-todo-month-cell--today' : '',
-                    style: { cursor: 'pointer' },
+                    className: cellClass,
+                    style: { cursor: 'pointer', height: '100%', minHeight: '84px', maxHeight: 'none', overflow: 'visible', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'stretch' },
+                    onDragOver: (event) => {
+                      if (!model.dragKey) return;
+                      event.preventDefault();
+                      try {
+                        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                      } catch (error) {
+                        /* ignore */
+                      }
+                      model.dragOverDay(cellKey);
+                    },
+                    onDragLeave: (event) => {
+                      if (event && event.currentTarget && event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) return;
+                      model.clearDragOver(cellKey);
+                    },
+                    onDrop: (event) => {
+                      if (!model.dragKey) return;
+                      event.preventDefault();
+                      let payload = '';
+                      try {
+                        payload = String((event.dataTransfer && event.dataTransfer.getData('text/plain')) || '');
+                      } catch (error) {
+                        payload = '';
+                      }
+                      const parts = payload.split('|');
+                      const source = model.tasks.find((task) => Number(task.id) === Number(parts[0]));
+                      const fromKey = parts[1] || '';
+                      model.endTaskDrag();
+                      if (!source) return;
+                      if (source.repeat) {
+                        model.showToast(tr('monthDragRepeat'));
+                        return;
+                      }
+                      if (fromKey === cellKey) return;
+                      model.moveTaskToDate({ source, occurrenceKey: fromKey || source.startDate }, cellKey);
+                    },
                     onClick: editorOpen
                       ? undefined
                       : (event) => {
+                          const target = event && event.target;
+                          if (target && typeof target.closest === 'function' && target.closest('.dsh-todo-month-task')) return;
                           event.stopPropagation();
                           model.openEditor(monthDay(cell));
                         },
                   },
                   h('b', null, String(cell.getDate())),
-                  model
-                    .tasksFor(cell)
-                    .slice(0, editorOpen ? 0 : 2)
-                    .map((task) => h('span', { key: task.id, className: 'dsh-todo-month-task' }, task.text)),
-                  editorOpen ? renderTodoEditor(monthDay(cell)) : null,
+                  h(
+                    'div',
+                    {
+                      className: 'dsh-todo-month-cell-body',
+                      style: {
+                        height: 'auto',
+                        flex: '1 1 auto',
+                        minHeight: '44px',
+                        marginTop: '2px',
+                        padding: '2px 3px',
+                        boxSizing: 'border-box',
+                        background: 'var(--dsw-alias-bg-layer-2)',
+                        borderRadius: '4px',
+                        overflow: 'visible',
+                      },
+                    },
+                    (editorOpen ? [] : model.tasksFor(cell)).map((task) => {
+                    const source = task.source || task;
+                    const done = model.isTaskDone(task);
+                    const repeating = Boolean(source.repeat);
+                    let taskClass = monthTaskClass(task);
+                    if (model.dragKey && model.dragKey === task.occurrenceKey) taskClass += ' dsh-todo-month-task--dragging';
+                    return h(
+                      'span',
+                      {
+                        key: task.id,
+                        className: taskClass,
+                        title: task.text,
+                        draggable: !done,
+                        onDragStart: (event) => {
+                          if (repeating) {
+                            if (event && event.preventDefault) event.preventDefault();
+                            model.showToast(tr('monthDragRepeat'));
+                            return;
+                          }
+                          try {
+                            if (event && event.dataTransfer) {
+                              event.dataTransfer.setData('text/plain', String(source.id) + '|' + String(task.occurrenceKey || source.startDate));
+                              event.dataTransfer.effectAllowed = 'move';
+                            }
+                          } catch (error) {
+                            /* ignore */
+                          }
+                          model.beginTaskDrag(task);
+                        },
+                        onDragEnd: () => model.endTaskDrag(),
+                        onClick: (event) => {
+                          if (event && event.stopPropagation) event.stopPropagation();
+                          model.toggleTask(task);
+                        },
+                        onDoubleClick: (event) => {
+                          if (event && event.stopPropagation) event.stopPropagation();
+                          model.openTaskEditor(task);
+                        },
+                      },
+                      h('span', { className: 'dsh-todo-month-task-text' }, task.text + (task.category === 'temporary' ? ' · ' + tr('temporaryKind') : '')),
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          className: 'dsh-todo-month-task-del',
+                          title: tr('remove'),
+                          'aria-label': tr('remove'),
+                          onClick: (event) => {
+                            if (event && event.stopPropagation) event.stopPropagation();
+                            model.deleteItem(task);
+                          },
+                        },
+                        '×',
+                      ),
+                    );
+                    }),
+                    editorOpen ? renderTodoEditor(monthDay(cell)) : null,
+                  ),
                 );
               }),
             ),
@@ -2945,7 +3075,7 @@ window.__ModuleLoader__.load({
 
           const periodSection = h(
             'section',
-            { className: 'dsh-todo-panel dsh-todo-period-panel' },
+            { className: 'dsh-todo-panel dsh-todo-period-panel', ref: periodRef, style: { height: 'auto', maxHeight: 'none', flex: '0 0 auto', overflow: 'visible' } },
             h(
               'div',
               { className: 'dsh-todo-section-head' },
@@ -2953,7 +3083,6 @@ window.__ModuleLoader__.load({
               h('div', { className: 'dsh-todo-actions' }, periodActions),
             ),
             h('div', { className: 'dsh-todo-period-body' }, model.showMonth ? monthView : weeksView),
-            h('p', { className: 'dsh-todo-note' }, tr('periodNote')),
           );
 
           // ----- category view -----------------------------------------------
@@ -3657,75 +3786,6 @@ window.__ModuleLoader__.load({
               )
             : null;
 
-          const maintenanceModal = model.maintenanceOpen
-            ? h(
-                'div',
-                { className: 'dsh-todo-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) model.closeMaintenance(); } },
-                h(
-                  'div',
-                  { className: 'dsh-todo-modal', role: 'dialog', 'aria-modal': true, 'aria-label': tr('maintenanceTitle') },
-                  h(
-                    'div',
-                    { className: 'dsh-todo-modal-head' },
-                    h('h3', null, tr('maintenanceTitle')),
-                    h('button', { type: 'button', className: 'dsh-todo-modal-close', 'aria-label': tr('cancel'), onClick: () => model.closeMaintenance() }, '×'),
-                  ),
-                  h('input', {
-                    className: 'dsh-todo-field',
-                    placeholder: tr('maintenanceSrc'),
-                    'aria-label': tr('maintenanceSrc'),
-                    value: model.maintenanceSrc,
-                    onChange: (event) => {
-                      model.maintenanceSrc = event.target.value;
-                      model.bump();
-                    },
-                  }),
-                  h('p', { className: 'dsh-todo-muted' }, tr('maintenanceKeepHint')),
-                  h('input', {
-                    className: 'dsh-todo-field',
-                    placeholder: tr('maintenanceDest'),
-                    'aria-label': tr('maintenanceDest'),
-                    value: model.maintenanceDest,
-                    onChange: (event) => {
-                      model.maintenanceDest = event.target.value;
-                      model.bump();
-                    },
-                  }),
-                  h(
-                    'label',
-                    { className: 'dsh-todo-muted' },
-                    h('input', {
-                      type: 'checkbox',
-                      checked: model.maintenanceOverwrite === true,
-                      onChange: (event) => {
-                        model.maintenanceOverwrite = event.target.checked === true;
-                        model.bump();
-                      },
-                    }),
-                    ' ',
-                    tr('maintenanceOverwrite'),
-                  ),
-                  model.maintenanceError ? h('p', { className: 'dsh-todo-warn' }, model.maintenanceError) : null,
-                  model.maintenanceResult ? h('p', { className: 'dsh-todo-muted dsh-todo-pre' }, model.maintenanceResult) : null,
-                  h(
-                    'div',
-                    { className: 'dsh-todo-editor-actions' },
-                    h(
-                      'button',
-                      {
-                        type: 'button',
-                        className: 'dsh-todo-action dsh-todo-primary',
-                        disabled: model.maintenanceBusy,
-                        onClick: () => model.runMaintenance(),
-                      },
-                      model.maintenanceBusy ? tr('maintenanceRunning') : tr('maintenanceRun'),
-                    ),
-                    h('button', { type: 'button', className: 'dsh-todo-action', onClick: () => model.closeMaintenance() }, tr('cancel')),
-                  ),
-                ),
-              )
-            : null;
-
           const recordDeleteModal = model.recordDeleteTarget
             ? h(
                 'div',
@@ -3842,18 +3902,12 @@ window.__ModuleLoader__.load({
               model.storageBlocked ? h('p', { className: 'dsh-todo-warn' }, tr('storageBlocked')) : null,
               model.mergeNotice ? h('p', { className: 'dsh-todo-warn' }, model.mergeNotice) : null,
               model.meetingNotice ? h('p', { className: 'dsh-todo-muted' }, model.meetingNotice) : null,
-              h(
-                'div',
-                { className: 'dsh-todo-maint' },
-                h('button', { type: 'button', className: 'dsh-todo-maint-link', onClick: () => model.openMaintenance() }, tr('maintenanceEntry')),
-              ),
               model.hostError ? h('p', { className: 'dsh-todo-warn' }, tr('hostError')) : null,
             ),
             taskModal,
             projectModal,
             importModal,
             meetingModal,
-            maintenanceModal,
             recordDeleteModal,
             model.highlightBar
               ? h(
