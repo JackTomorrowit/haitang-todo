@@ -19,7 +19,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 
-const PLUGIN_VERSION = '1.5.7'
+const PLUGIN_VERSION = '1.5.8'
 /** Absolute registration paths of the panel API; each carries one operation. */
 const API_BASE = '/api/sidebarTodo'
 /** Panel document version, bumped when the todo shape changes. */
@@ -138,6 +138,15 @@ function sortProblemRecordsNewestFirst(list) {
   })
 }
 
+/** Non-destructive UI preferences (last used view). Kept exactly as {tab, periodMode}. */
+function normalizeUi(value) {
+  if (!isPlainObject(value)) return null
+  const tab = value.tab === 'category' ? 'category' : value.tab === 'period' ? 'period' : ''
+  const periodMode = value.periodMode === 'month' ? 'month' : value.periodMode === 'week' ? 'week' : ''
+  if (!tab && !periodMode) return null
+  return { tab: tab || 'period', periodMode: periodMode || 'week' }
+}
+
 function normalizeDocument(value) {
   if (!isPlainObject(value)) return null
   if (!Array.isArray(value.tasks)) return null
@@ -148,13 +157,16 @@ function normalizeDocument(value) {
     if (Array.isArray(records)) project.records.problem = sortProblemRecordsNewestFirst(records)
   }
   const importedAt = typeof value.importedAt === 'string' ? value.importedAt : ''
-  return {
+  const ui = normalizeUi(value.ui)
+  const document = {
     version: DOCUMENT_VERSION,
     tasks,
     projects,
     importedAt,
     updatedAt: Date.now(),
   }
+  if (ui) document.ui = ui
+  return document
 }
 
 let cachedDirectory = null
@@ -1179,6 +1191,10 @@ const handlers = {
         conflicts = result.conflicts
         mergedFlag = true
       }
+      // UI preference: the panel's value wins; keep the stored one when the panel sent none.
+      const ui = normalizeUi(incoming.ui) || normalizeUi(disk.ui)
+      if (ui) merged.ui = ui
+      else delete merged.ui
       const serialized = JSON.stringify(merged, null, 2)
       if (serialized.length > MAX_DOCUMENT_BYTES) return fail(413, '待办文档过大，已拒绝保存')
       const backup = await backupStateFile(directory)

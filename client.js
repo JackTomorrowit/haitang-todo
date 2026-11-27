@@ -28,15 +28,14 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.31';
-    const CLIENT_BUILD = '2026-11-26T11:56';
+    const CLIENT_VERSION = '1.3.39';
+    const CLIENT_BUILD = '2026-11-27T10:10';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
     const EN = {
       title: 'Sidebar Todo',
       label: 'Sidebar Todo',
-      description: 'The workbench todo page, in the sidebar: period calendar, category lanes, repeat rules and completion ticks.',
       backToChat: 'Back to chat',
       sync: 'Sync workbench',
       syncing: 'Syncing…',
@@ -50,6 +49,8 @@ window.__ModuleLoader__.load({
       autoLayout: 'Auto',
       weekView: 'Week view',
       prev: 'Previous',
+      prevMonth: 'Previous month',
+      nextMonth: 'Next month',
       next: 'Next',
       reset: 'Today',
       resetMonth: 'This month',
@@ -97,8 +98,6 @@ window.__ModuleLoader__.load({
       saved: 'Saved',
       savingLabel: 'Saving…',
       hostError: 'Writing the local file failed; the changes stay in this browser for now.',
-      mergedNotice: 'Newer data from another writer was merged automatically; refresh to see the latest.',
-      mergedConflicts: 'conflicts:',
       storageBlocked: 'This browser blocked local storage; changes last only until the page closes.',
       syncOk: 'Imported workbench todos',
       syncNone: 'No workbench todo data found.',
@@ -179,7 +178,6 @@ window.__ModuleLoader__.load({
     const ZH = {
       title: '侧栏待办',
       label: '侧栏待办',
-      description: '工作台待办事项的侧栏版：周期日历清单、象限视图、重复规则与完成打勾，数据可自动保存并从工作台同步。',
       backToChat: '回到对话',
       sync: '同步工作台',
       syncing: '同步中…',
@@ -193,6 +191,8 @@ window.__ModuleLoader__.load({
       autoLayout: '自适应',
       weekView: '返回周视图',
       prev: '上一周',
+      prevMonth: '上一月',
+      nextMonth: '下一月',
       next: '下一周',
       reset: '回到今天',
       resetMonth: '回到本月',
@@ -240,8 +240,6 @@ window.__ModuleLoader__.load({
       saved: '已保存',
       savingLabel: '保存中…',
       hostError: '本地文件写入失败，内容暂时只保存在浏览器里。',
-      mergedNotice: '已自动合并其他入口写入的新数据，刷新面板后可看到最新内容',
-      mergedConflicts: '冲突条目',
       storageBlocked: '浏览器拒绝了本地存储，内容只在关闭页面之前有效。',
       syncOk: '已导入工作台待办',
       syncNone: '没找到工作台待办数据。',
@@ -361,10 +359,10 @@ window.__ModuleLoader__.load({
       '.dsh-todo-day{border-right:1px solid var(--dsw-alias-border-l1);min-height:270px;cursor:pointer;display:flex;flex-direction:column}',
       '.dsh-todo-day:last-child{border-right:0}',
       '.dsh-todo-day--today{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-state-success-primary);border-radius:6px}',
-      '.dsh-todo-day-head{padding:9px 9px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:11px;',
+      '.dsh-todo-day-head{display:flex;align-items:flex-start;gap:5px;padding:9px 9px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:11px;',
       'color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-day--today .dsh-todo-day-head{color:var(--dsw-alias-brand-primary)}',
-      '.dsh-todo-day-head b{display:block;font-size:17px;color:var(--dsw-alias-label-primary)}',
+      '.dsh-todo-day-head b{display:inline;font-size:17px;color:var(--dsw-alias-label-primary)}',
       '.dsh-todo-day--today .dsh-todo-day-head b{color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;cursor:pointer}',
       '.dsh-todo-task{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid var(--dsw-alias-brand-primary);',
@@ -376,7 +374,9 @@ window.__ModuleLoader__.load({
       '.dsh-todo-period-panel{display:flex;flex-direction:column;flex:0 0 auto;min-height:0;overflow:visible}',
       '.dsh-todo-period-body{flex:1 1 auto;min-height:0;overflow:visible}',
       '.dsh-todo-weeks{display:flex;flex-direction:column;min-height:0;gap:13px}',
-      '.dsh-todo-weeks .dsh-todo-week{flex:0 0 auto;display:flex;flex-direction:column;min-height:140px}',
+      '.dsh-todo-weeks .dsh-todo-week{flex:0 0 auto;display:flex;flex-direction:row;min-height:140px}',
+      '.dsh-todo-week-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}',
+      '.dsh-todo-week>.dsh-todo-weeknum{flex:0 0 28px;width:28px;min-height:0!important}',
       '.dsh-todo-weeks .dsh-todo-days{flex:0 0 auto;min-height:0;overflow:visible}',
       '.dsh-todo-period-panel .dsh-todo-day{min-height:0;overflow:visible;box-sizing:border-box}',
       '.dsh-todo-period-panel .dsh-todo-month{display:flex;flex-direction:column;min-height:0;overflow:visible;box-sizing:border-box}',
@@ -422,13 +422,18 @@ window.__ModuleLoader__.load({
       '.dsh-todo-note{padding:10px 16px 14px;margin:0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}',
       '.dsh-todo-month{padding:0 12px 14px}',
       '.dsh-todo-month-title{padding:10px 4px;font-size:14px;font-weight:700;color:var(--dsw-alias-label-secondary)}',
-      '.dsh-todo-month-grid{display:grid;grid-template-columns:repeat(7,minmax(88px,1fr));min-width:640px;',
+      '.dsh-todo-month-grid{display:grid;grid-template-columns:28px repeat(7,minmax(88px,1fr));min-width:668px;',
       'border-top:1px solid var(--dsw-alias-border-l1);border-left:1px solid var(--dsw-alias-border-l1)}',
       '.dsh-todo-month-grid>div{min-height:84px;padding:6px;border-right:1px solid var(--dsw-alias-border-l1);',
       'border-bottom:1px solid var(--dsw-alias-border-l1)}',
+      '.dsh-todo-month-weeknum{min-height:84px!important;display:flex;align-items:center;justify-content:center;',
+      'padding-top:0;text-align:center;box-sizing:border-box;font-size:10px;font-weight:600;color:var(--dsw-alias-label-secondary);',
+      'background:var(--dsw-alias-bg-layer-2);border-right:1px solid var(--dsw-alias-border-l1);border-bottom:1px solid var(--dsw-alias-border-l1)}',
       '.dsh-todo-month-weekday{min-height:0!important;text-align:center;font-size:11px;font-weight:700;',
       'background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary)}',
-      '.dsh-todo-month-cell--today{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-state-success-primary);border-radius:6px}',
+      '.dsh-todo-month-head{align-items:flex-start}',
+      '.dsh-todo-month-head .dsh-todo-month-head-title{margin:0;font-size:15px;line-height:24px}',
+      '.dsh-todo-month-cell--today{background:var(--dsw-alias-bg-layer-2);border-radius:6px;outline:1px solid var(--dsw-alias-state-success-primary);outline-offset:-1px;position:relative;z-index:2}',
       '.dsh-todo-month-task{display:flex;align-items:center;gap:4px;margin-top:5px;padding:2px 4px;border-left:2px solid var(--dsw-alias-brand-primary);',
       'border-radius:4px;background:var(--dsw-alias-bg-layer-2);font-size:10px;cursor:pointer}',
       '.dsh-todo-month-task-text{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
@@ -812,7 +817,15 @@ window.__ModuleLoader__.load({
           if (!record.id) record.id = 1;
         }
       }
-      return { tasks, projects, importedAt: typeof raw.importedAt === 'string' ? raw.importedAt : '' };
+      let ui = null;
+      if (raw.ui && typeof raw.ui === 'object') {
+        const tab = raw.ui.tab === 'category' ? 'category' : raw.ui.tab === 'period' ? 'period' : '';
+        const periodMode = raw.ui.periodMode === 'month' ? 'month' : raw.ui.periodMode === 'week' ? 'week' : '';
+        if (tab || periodMode) ui = { tab: tab || 'period', periodMode: periodMode || 'week' };
+      }
+      const normalized = { tasks, projects, importedAt: typeof raw.importedAt === 'string' ? raw.importedAt : '' };
+      if (ui) normalized.ui = ui;
+      return normalized;
     }
 
     function readLocalDocument() {
@@ -1040,7 +1053,6 @@ window.__ModuleLoader__.load({
         storageBlocked: false,
         syncing: false,
         baseRev: '',
-        mergeNotice: '',
         nextTaskId: 1,
         nextProjectId: 1,
         nextRecordId: 1,
@@ -1064,7 +1076,14 @@ window.__ModuleLoader__.load({
       };
 
       // ----- persistence ---------------------------------------------------
-      const documentOf = () => ({ version: 1, tasks: model.tasks, projects: model.projects, importedAt: model.importedAt || '', updatedAt: new Date().toISOString() });
+      const documentOf = () => ({
+        version: 1,
+        tasks: model.tasks,
+        projects: model.projects,
+        importedAt: model.importedAt || '',
+        ui: { tab: model.mainView === 'category' ? 'category' : 'period', periodMode: model.showMonth ? 'month' : 'week' },
+        updatedAt: new Date().toISOString(),
+      });
 
       model.recount = () => {
         let maxTask = 0;
@@ -1094,10 +1113,14 @@ window.__ModuleLoader__.load({
             if (data && typeof data.version === 'string') model.hostVersion = data.version;
             if (data && data.merged) {
               const conflicts = Array.isArray(data.conflicts) ? data.conflicts : [];
-              model.mergeNotice = tr('mergedNotice') + (conflicts.length > 0 ? ' · ' + tr('mergedConflicts') + ' ' + conflicts.length : '');
+              // Merge logic stays; the notice is no longer surfaced in the UI.
+              try {
+                console.debug('[sidebar-todo] merged from another writer', conflicts);
+              } catch (error) {
+                /* console may be unavailable */
+              }
               const normalized = data.document ? normalizeDocument(data.document) : null;
               if (normalized) model.adopt(normalized);
-              model.showToast(model.mergeNotice);
             }
             model.bump();
           })
@@ -1135,6 +1158,16 @@ window.__ModuleLoader__.load({
         model.tasks = document.tasks;
         model.projects = document.projects;
         model.importedAt = document.importedAt || '';
+        if (document.ui && typeof document.ui === 'object') {
+          model.mainView = document.ui.tab === 'category' ? 'category' : 'period';
+          model.showMonth = document.ui.periodMode === 'month';
+          model.manualView = true;
+        } else {
+          // Old documents without ui preferences: fall back to period view + week view.
+          model.mainView = 'period';
+          model.showMonth = false;
+          model.manualView = true;
+        }
         model.recount();
         model.bump();
       };
@@ -1398,7 +1431,7 @@ window.__ModuleLoader__.load({
 
       model.currentWeekNumber = () => weekNumber(monday());
       model.monthViewDate = () => new Date(today().getFullYear(), today().getMonth() + model.monthOffset, 1);
-      model.monthTitle = () => model.monthViewDate().getFullYear() + '年' + (model.monthViewDate().getMonth() + 1) + '月 · 月度待办';
+      model.monthTitle = () => model.monthViewDate().getFullYear() + '年' + (model.monthViewDate().getMonth() + 1) + '月';
 
       model.monthCells = () => {
         const first = model.monthViewDate();
@@ -1436,6 +1469,7 @@ window.__ModuleLoader__.load({
         model.manualView = false;
         model.updateViewport();
         model.bump();
+        model.schedulePersist();
       };
 
       // ----- create / edit tasks ------------------------------------------
@@ -2761,8 +2795,8 @@ window.__ModuleLoader__.load({
                     model.openEditor(day);
                   },
                 },
-                day.weekday + ' ',
                 h('b', null, String(day.date.getDate())),
+                h('span', null, day.weekday),
               ),
               h(
                 'div',
@@ -2845,6 +2879,7 @@ window.__ModuleLoader__.load({
                   model.manualView = true;
                   model.showMonth = !model.showMonth;
                   model.bump();
+                  model.schedulePersist();
                 },
               },
               model.showMonth ? tr('weekView') : tr('monthView'),
@@ -2868,7 +2903,7 @@ window.__ModuleLoader__.load({
                 className: 'dsh-todo-action',
                 onClick: () => (model.showMonth ? model.shiftMonth(-1) : model.shiftWeek(-1)),
               },
-              tr('prev'),
+              model.showMonth ? tr('prevMonth') : tr('prev'),
             ),
             h(
               'button',
@@ -2878,7 +2913,7 @@ window.__ModuleLoader__.load({
                 className: 'dsh-todo-action',
                 onClick: () => (model.showMonth ? model.shiftMonth(1) : model.shiftWeek(1)),
               },
-              tr('next'),
+              model.showMonth ? tr('nextMonth') : tr('next'),
             ),
             h(
               'button',
@@ -2916,21 +2951,44 @@ window.__ModuleLoader__.load({
             return name;
           };
 
+          const monthWeekNumbers = (() => {
+            const cells = model.monthCells();
+            const numbers = {};
+            for (let start = 0; start < cells.length; start += 7) {
+              const first = cells.slice(start, start + 7).find(Boolean);
+              numbers[start] = first ? String(weekNumber(first)) : '';
+            }
+            return numbers;
+          })();
+
           const monthView = h(
             'div',
             { className: 'dsh-todo-month' },
-            h('div', { className: 'dsh-todo-month-title' }, model.monthTitle()),
             h(
               'div',
               { className: 'dsh-todo-month-grid', style: { gridTemplateRows: 'auto', gridAutoRows: 'minmax(84px, auto)', height: 'auto', overflow: 'visible' } },
+              h('div', { key: 'corner', className: 'dsh-todo-month-weekday' }),
               WEEKDAYS.map((name) => h('div', { key: name, className: 'dsh-todo-month-weekday' }, name)),
               model.monthCells().map((cell, index) => {
-                if (!cell) return h('div', { key: index });
+                const rowItems = [];
+                if (index % 7 === 0) {
+                  rowItems.push(
+                    h(
+                      'div',
+                      { key: 'week-' + index, className: 'dsh-todo-month-weeknum', title: tr('weekNumber') + (monthWeekNumbers[index] || '') },
+                      monthWeekNumbers[index] || '',
+                    ),
+                  );
+                }
+                if (!cell) {
+                  rowItems.push(h('div', { key: index }));
+                  return rowItems;
+                }
                 const cellKey = keyOf(cell);
                 const editorOpen = model.editorDay === cellKey;
                 let cellClass = model.isToday(cell) ? 'dsh-todo-month-cell--today' : '';
                 if (model.dragOverKey === cellKey) cellClass += ' dsh-todo-month-cell--drop';
-                return h(
+                const cellNode = h(
                   'div',
                   {
                     key: index,
@@ -3056,6 +3114,8 @@ window.__ModuleLoader__.load({
                     editorOpen ? renderTodoEditor(monthDay(cell)) : null,
                   ),
                 );
+                rowItems.push(cellNode);
+                return rowItems;
               }),
             ),
           );
@@ -3067,21 +3127,45 @@ window.__ModuleLoader__.load({
               h(
                 'div',
                 { key: row.title, className: 'dsh-todo-week' },
-                h('div', { className: 'dsh-todo-week-title' }, row.title),
-                h('div', { className: 'dsh-todo-days' }, row.days.map(renderDay)),
+                h(
+                  'div',
+                  {
+                    className: 'dsh-todo-month-weeknum dsh-todo-weeknum',
+                    title: tr('weekNumber') + String(weekNumber(row.days[0].date)),
+                  },
+                  String(weekNumber(row.days[0].date)),
+                ),
+                h(
+                  'div',
+                  { className: 'dsh-todo-week-main' },
+                  h('div', { className: 'dsh-todo-days' }, row.days.map(renderDay)),
+                ),
               ),
             ),
           );
 
+          const weekMonthTitle = (() => {
+            const rows = model.weekRows();
+            const first = rows[0] && rows[0].days[0];
+            return first ? first.date.getFullYear() + '年' + (first.date.getMonth() + 1) + '月' : '';
+          })();
+
           const periodSection = h(
             'section',
             { className: 'dsh-todo-panel dsh-todo-period-panel', ref: periodRef, style: { height: 'auto', maxHeight: 'none', flex: '0 0 auto', overflow: 'visible' } },
-            h(
-              'div',
-              { className: 'dsh-todo-section-head' },
-              h('div', null, h('h2', null, tr('periodTitle')), h('span', { className: 'dsh-todo-muted' }, tr('periodHint'))),
-              h('div', { className: 'dsh-todo-actions' }, periodActions),
-            ),
+            model.showMonth
+              ? h(
+                  'div',
+                  { className: 'dsh-todo-section-head dsh-todo-month-head' },
+                  h('h2', { className: 'dsh-todo-month-head-title' }, model.monthTitle()),
+                  h('div', { className: 'dsh-todo-actions' }, periodActions),
+                )
+              : h(
+                  'div',
+                  { className: 'dsh-todo-section-head' },
+                  h('div', null, h('h2', null, weekMonthTitle)),
+                  h('div', { className: 'dsh-todo-actions' }, periodActions),
+                ),
             h('div', { className: 'dsh-todo-period-body' }, model.showMonth ? monthView : weeksView),
           );
 
@@ -3848,7 +3932,6 @@ window.__ModuleLoader__.load({
                     'div',
                     null,
                     h('h1', { className: 'dsh-todo-title' }, tr('title')),
-                    h('p', { className: 'dsh-todo-desc' }, tr('description')),
                   ),
                 ),
                 h(
@@ -3867,7 +3950,6 @@ window.__ModuleLoader__.load({
               h(
                 'div',
                 { className: 'dsh-todo-toolbar' },
-                h('strong', null, model.weekLabel()),
                 h(
                   'div',
                   { className: 'dsh-todo-segmented' },
@@ -3879,6 +3961,7 @@ window.__ModuleLoader__.load({
                       onClick: () => {
                         model.mainView = 'period';
                         model.bump();
+                        model.schedulePersist();
                       },
                     },
                     tr('periodView'),
@@ -3891,6 +3974,7 @@ window.__ModuleLoader__.load({
                       onClick: () => {
                         model.mainView = 'category';
                         model.bump();
+                        model.schedulePersist();
                       },
                     },
                     tr('categoryView'),
@@ -3900,7 +3984,6 @@ window.__ModuleLoader__.load({
               ),
               model.mainView === 'period' ? periodSection : categorySection,
               model.storageBlocked ? h('p', { className: 'dsh-todo-warn' }, tr('storageBlocked')) : null,
-              model.mergeNotice ? h('p', { className: 'dsh-todo-warn' }, model.mergeNotice) : null,
               model.meetingNotice ? h('p', { className: 'dsh-todo-muted' }, model.meetingNotice) : null,
               model.hostError ? h('p', { className: 'dsh-todo-warn' }, tr('hostError')) : null,
             ),
