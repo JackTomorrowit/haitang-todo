@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.46';
-    const CLIENT_BUILD = '2026-11-28T21:42';
+    const CLIENT_VERSION = '1.3.47';
+    const CLIENT_BUILD = '2026-11-28T21:58';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
@@ -3062,13 +3062,14 @@ window.__ModuleLoader__.load({
             ),
           );
 
+          const weekRowMinHeight = Math.max(240, Math.round((typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 768) * 0.45));
           const weeksView = h(
             'div',
             { className: 'dsh-todo-weeks' },
             model.weekRows().map((row) =>
               h(
                 'div',
-                { key: row.title, className: 'dsh-todo-week' },
+                { key: row.title, className: 'dsh-todo-week', style: { minHeight: weekRowMinHeight + 'px' } },
                 h(
                   'div',
                   {
