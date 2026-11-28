@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.42';
-    const CLIENT_BUILD = '2026-11-28T16:05';
+    const CLIENT_VERSION = '1.3.46';
+    const CLIENT_BUILD = '2026-11-28T21:42';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
@@ -340,9 +340,12 @@ window.__ModuleLoader__.load({
       '.dsh-todo-day--today .dsh-todo-day-head b{color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-task-list{flex:1 1 auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;cursor:pointer}',
       '.dsh-todo-task{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid var(--dsw-alias-brand-primary);',
-      'border-radius:7px;background:var(--dsw-alias-bg-base);padding:7px 8px;font-size:11px;line-height:1.45;cursor:pointer}',
+      'border-radius:7px;background:var(--dsw-alias-bg-base);padding:7px 22px 7px 8px;font-size:11px;line-height:1.45;cursor:pointer;position:relative}',
       '.dsh-todo-task:hover{background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-task{cursor:grab}',
+      '.dsh-todo-task-del{position:absolute;top:2px;right:3px;border:0;background:transparent;color:var(--dsw-alias-state-error-primary);',
+      'display:none;font-size:11px;line-height:1;padding:1px 2px;cursor:pointer}',
+      '.dsh-todo-task:hover .dsh-todo-task-del,.dsh-todo-task:focus-within .dsh-todo-task-del{display:block}',
       '.dsh-todo-task--dragging{opacity:.45;cursor:grabbing}',
       '.dsh-todo-day--drop{background:var(--dsw-alias-bg-layer-2);box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary)}',
       '.dsh-todo-period-panel{display:flex;flex-direction:column;flex:0 0 auto;min-height:0;overflow:visible}',
@@ -351,7 +354,7 @@ window.__ModuleLoader__.load({
       '.dsh-todo-weeks .dsh-todo-week{flex:0 0 auto;display:flex;flex-direction:row;min-height:140px}',
       '.dsh-todo-week-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}',
       '.dsh-todo-week>.dsh-todo-weeknum{flex:0 0 28px;width:28px;min-height:0!important}',
-      '.dsh-todo-weeks .dsh-todo-days{flex:0 0 auto;min-height:0;overflow:visible}',
+      '.dsh-todo-weeks .dsh-todo-days{flex:1 1 auto;min-height:0;overflow:visible}',
       '.dsh-todo-period-panel .dsh-todo-day{min-height:0;overflow:visible;box-sizing:border-box}',
       '.dsh-todo-period-panel .dsh-todo-month{display:flex;flex-direction:column;min-height:0;overflow:visible;box-sizing:border-box}',
       '.dsh-todo-period-panel .dsh-todo-month-grid{flex:0 0 auto;min-height:0;grid-template-rows:auto;grid-auto-rows:minmax(84px,auto);overflow:visible}',
@@ -361,7 +364,7 @@ window.__ModuleLoader__.load({
       'color:var(--dsw-alias-state-warn-primary)}',
       '.dsh-todo-multiline{white-space:pre-line;overflow-wrap:anywhere;display:block}',
       '.dsh-todo-task-kind{display:block;margin-top:3px;font-size:10px;color:var(--dsw-alias-label-secondary)}',
-      '.dsh-todo-add-zone{margin:0 8px 8px;padding:9px;border:1px dashed var(--dsw-alias-border-l1);border-radius:7px;',
+      '.dsh-todo-add-zone{margin:auto 8px 4px;padding:9px;border:1px dashed var(--dsw-alias-border-l1);border-radius:7px;',
       'text-align:center;font-size:11px;color:var(--dsw-alias-label-secondary);cursor:pointer}',
       '.dsh-todo-add-zone:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-editor{display:grid;gap:6px;padding:8px;border:1px solid var(--dsw-alias-brand-primary);border-radius:8px;',
@@ -1481,8 +1484,14 @@ window.__ModuleLoader__.load({
         const source = model.taskSource(task);
         const fromKey = String((task && task.occurrenceKey) || source.startDate || '');
         model.endTaskDrag();
+        if (!source) return;
+        // Repeating series are never moved by drag (would truncate history); edit the rule instead.
+        if (source.repeat) {
+          model.showToast(tr('monthDragRepeat'));
+          return;
+        }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(String(targetKey || ''))) return;
-        if (!source || fromKey === targetKey) return;
+        if (fromKey === targetKey) return;
         const before = {
           startDate: source.startDate,
           completedDates: JSON.parse(JSON.stringify(source.completedDates || {})),
@@ -2715,6 +2724,12 @@ window.__ModuleLoader__.load({
                       })(),
                       draggable: true,
                       onDragStart: (event) => {
+                        const source = task.source || task;
+                        if (source.repeat) {
+                          if (event && event.preventDefault) event.preventDefault();
+                          model.showToast(tr('monthDragRepeat'));
+                          return;
+                        }
                         try {
                           if (event && event.dataTransfer) {
                             event.dataTransfer.setData('text/plain', String(task.source.id) + '|' + String(task.occurrenceKey || ''));
@@ -2741,6 +2756,25 @@ window.__ModuleLoader__.load({
                       { className: 'dsh-todo-multiline' },
                       task.number + '. ' + task.text,
                       task.category === 'temporary' ? h('small', { className: 'dsh-todo-task-kind' }, tr('temporaryKind') + ' · ' + task.weekday) : null,
+                    ),
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'dsh-todo-task-del',
+                        title: tr('remove'),
+                        'aria-label': tr('remove'),
+                        onMouseDown: (event) => {
+                          if (event && event.stopPropagation) event.stopPropagation();
+                        },
+                        onClick: (event) => {
+                          if (event && event.stopPropagation) event.stopPropagation();
+                          if (event && event.preventDefault) event.preventDefault();
+                          if (event && event.detail > 1) return;
+                          model.deleteItem(task);
+                        },
+                      },
+                      '×',
                     ),
                   ),
                 ),
@@ -2998,6 +3032,7 @@ window.__ModuleLoader__.load({
                           'aria-label': tr('remove'),
                           onClick: (event) => {
                             if (event && event.stopPropagation) event.stopPropagation();
+                            if (event && event.detail > 1) return;
                             model.deleteItem(task);
                           },
                         },
@@ -3127,7 +3162,7 @@ window.__ModuleLoader__.load({
                             'span',
                             { className: 'dsh-todo-item-actions' },
                             h('button', { type: 'button', className: 'dsh-todo-mini', onClick: () => model.startEdit(item) }, tr('edit')),
-                            h('button', { type: 'button', className: 'dsh-todo-mini', onClick: () => model.deleteItem(item) }, tr('remove')),
+                            h('button', { type: 'button', className: 'dsh-todo-mini', onClick: (event) => { if (event && event.detail > 1) return; model.deleteItem(item); } }, tr('remove')),
                           ),
                         )
                       : h('b', null, index + 1 + '.'),
@@ -3142,7 +3177,7 @@ window.__ModuleLoader__.load({
                       ? h('button', { type: 'button', className: 'dsh-todo-mini', onClick: () => model.toggleItem(item) }, done ? tr('restore') : tr('done'))
                       : null,
                     h('button', { type: 'button', className: 'dsh-todo-mini', onClick: () => model.startEdit(item) }, tr('edit')),
-                    h('button', { type: 'button', className: 'dsh-todo-mini', onClick: () => model.deleteItem(item) }, tr('remove')),
+                    h('button', { type: 'button', className: 'dsh-todo-mini', onClick: (event) => { if (event && event.detail > 1) return; model.deleteItem(item); } }, tr('remove')),
                   )
                 : null,
             );
