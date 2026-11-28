@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
     /** Document-relative base of the Host API (see index.js). */
     const API_BASE = 'api/sidebarTodo';
     /** Bump CLIENT_BUILD whenever client.js changes, so the running page is identifiable. */
-    const CLIENT_VERSION = '1.3.39';
-    const CLIENT_BUILD = '2026-11-27T10:10';
+    const CLIENT_VERSION = '1.3.42';
+    const CLIENT_BUILD = '2026-11-28T16:05';
     /** Debounce before a change is written to this browser and the Host. */
     const SAVE_DELAY = 700;
 
@@ -37,9 +37,6 @@ window.__ModuleLoader__.load({
       title: 'Sidebar Todo',
       label: 'Sidebar Todo',
       backToChat: 'Back to chat',
-      sync: 'Sync workbench',
-      syncing: 'Syncing…',
-      import: 'Paste import',
       periodView: 'Period',
       categoryView: 'Categories',
       periodTitle: 'Period view · calendar list',
@@ -99,15 +96,6 @@ window.__ModuleLoader__.load({
       savingLabel: 'Saving…',
       hostError: 'Writing the local file failed; the changes stay in this browser for now.',
       storageBlocked: 'This browser blocked local storage; changes last only until the page closes.',
-      syncOk: 'Imported workbench todos',
-      syncNone: 'No workbench todo data found.',
-      importTitle: 'Import workbench todos',
-      importHint: 'Open the workbench page, press F12 → Console and run: copy(localStorage.getItem("ai-agent-web.todo.v1")), then paste it here.',
-      importPlaceholder: '{"tasks":[…],"projects":[…]}',
-      importMerge: 'Merge',
-      importReplace: 'Replace',
-      importOk: 'Import',
-      importBad: 'That text is not a workbench todo document.',
       meetingEntry: 'Meeting notes',
       meetingTitle: 'Meeting notes · save transcript to inbox',
       meetingSubjectLabel: 'Meeting subject (required)',
@@ -129,7 +117,6 @@ window.__ModuleLoader__.load({
       meetingBatchSaved: 'Saved {n} meeting transcript(s)',
       meetingBatchFailed: 'Failed {m}',
       meetingNoSourceDate: 'no source date found; saving under today',
-      imported: 'Imported',
       catPeriodic: 'Periodic work',
       catMonthly: 'Monthly goals',
       catProject: 'Project work',
@@ -179,9 +166,6 @@ window.__ModuleLoader__.load({
       title: '侧栏待办',
       label: '侧栏待办',
       backToChat: '回到对话',
-      sync: '同步工作台',
-      syncing: '同步中…',
-      import: '粘贴导入',
       periodView: '周期视图',
       categoryView: '象限视图',
       periodTitle: '周期视图 · 日历清单',
@@ -241,15 +225,6 @@ window.__ModuleLoader__.load({
       savingLabel: '保存中…',
       hostError: '本地文件写入失败，内容暂时只保存在浏览器里。',
       storageBlocked: '浏览器拒绝了本地存储，内容只在关闭页面之前有效。',
-      syncOk: '已导入工作台待办',
-      syncNone: '没找到工作台待办数据。',
-      importTitle: '导入工作台待办',
-      importHint: '打开工作台页面按 F12 → 控制台执行：copy(localStorage.getItem("ai-agent-web.todo.v1"))，然后把内容粘贴到这里。',
-      importPlaceholder: '{"tasks":[…],"projects":[…]}',
-      importMerge: '合并导入',
-      importReplace: '覆盖导入',
-      importOk: '导入',
-      importBad: '这段内容不是工作台的待办数据。',
       meetingEntry: '会议纪要',
       meetingTitle: '会议纪要 · 保存逐字稿到收件箱',
       meetingSubjectLabel: '会议主题（必填）',
@@ -271,7 +246,6 @@ window.__ModuleLoader__.load({
       meetingBatchSaved: '已保存 {n} 个会议纪要',
       meetingBatchFailed: '失败 {m} 个',
       meetingNoSourceDate: '未识别到源日期，按今天保存',
-      imported: '已导入',
       catPeriodic: '周期性工作',
       catMonthly: '月目标',
       catProject: '项目工作',
@@ -446,6 +420,9 @@ window.__ModuleLoader__.load({
       '.dsh-todo-month-task--temporary{border-left-style:dashed}',
       '.dsh-todo-month-cell--drop{box-shadow:inset 0 0 0 2px var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-2)}',
       '.dsh-todo-month-task{cursor:grab}',
+      '.dsh-todo-month-add{margin-top:auto;padding-top:1px;text-align:center;font-size:9px;line-height:14px;cursor:pointer;',
+      'color:var(--dsw-alias-label-secondary);border-top:1px dashed var(--dsw-alias-border-l1)}',
+      '.dsh-todo-month-add:hover{color:var(--dsw-alias-brand-primary)}',
       '.dsh-todo-month-task--done{cursor:not-allowed}',
       '.dsh-todo-month-task--dragging{opacity:.45}',
       '.dsh-todo-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px}',
@@ -1026,10 +1003,6 @@ window.__ModuleLoader__.load({
         highlightBar: null,
         editingProject: null,
         projectEditDraft: { name: '', director: '', group: '', parentUnit: '' },
-        importOpen: false,
-        importText: '',
-        importMode: 'merge',
-        importNotice: '',
         meetingOpen: false,
         meetingSubject: '',
         meetingDate: '',
@@ -1051,7 +1024,6 @@ window.__ModuleLoader__.load({
         saving: false,
         hostError: false,
         storageBlocked: false,
-        syncing: false,
         baseRev: '',
         nextTaskId: 1,
         nextProjectId: 1,
@@ -1172,33 +1144,6 @@ window.__ModuleLoader__.load({
         model.bump();
       };
 
-      model.importDocument = (raw, mode) => {
-        const normalized = normalizeDocument(raw);
-        if (!normalized) return false;
-        if (mode === 'replace') {
-          model.tasks = normalized.tasks;
-          model.projects = normalized.projects;
-        } else {
-          const taskIds = new Set(model.tasks.map((task) => Number(task.id)));
-          for (const task of normalized.tasks) {
-            if (taskIds.has(Number(task.id))) continue;
-            model.tasks.push(task);
-            taskIds.add(Number(task.id));
-          }
-          const projectIds = new Set(model.projects.map((project) => Number(project.id)));
-          for (const project of normalized.projects) {
-            if (projectIds.has(Number(project.id))) continue;
-            model.projects.push(project);
-            projectIds.add(Number(project.id));
-          }
-        }
-        model.importedAt = new Date().toISOString();
-        model.recount();
-        model.schedulePersist();
-        model.bump();
-        return true;
-      };
-
       // ----- boot ----------------------------------------------------------
       model.bootstrap = () => {
         const local = readLocalDocument();
@@ -1237,28 +1182,6 @@ window.__ModuleLoader__.load({
       model.dispose = () => {
         if (toastTimer) window.clearTimeout(toastTimer);
         model.flush();
-      };
-
-      model.syncWorkbench = () => {
-        if (model.syncing) return;
-        model.syncing = true;
-        model.bump();
-        callApi('sync', {})
-          .then((data) => {
-            model.syncing = false;
-            if (data && data.document && model.importDocument(data.document, 'merge')) {
-              model.showToast(tr('syncOk') + ' · ' + model.tasks.length);
-            } else {
-              model.showToast(tr('syncNone'));
-            }
-            model.bump();
-          })
-          .catch((error) => {
-            model.syncing = false;
-            model.importNotice = error && error.message ? error.message : tr('syncNone');
-            model.importOpen = true;
-            model.bump();
-          });
       };
 
       // ----- queries -------------------------------------------------------
@@ -2095,37 +2018,6 @@ window.__ModuleLoader__.load({
         model.fullscreenCategory = model.fullscreenCategory === key ? '' : key;
         model.bump();
       };
-      model.openImport = () => {
-        model.importOpen = true;
-        model.importText = '';
-        model.importMode = 'merge';
-        model.importNotice = '';
-        model.bump();
-      };
-      model.closeImport = () => {
-        model.importOpen = false;
-        model.importText = '';
-        model.importNotice = '';
-        model.bump();
-      };
-      model.applyImport = () => {
-        let parsed = null;
-        try {
-          parsed = JSON.parse(model.importText);
-        } catch (error) {
-          parsed = null;
-        }
-        if (!parsed || !model.importDocument(parsed, model.importMode)) {
-          model.importNotice = tr('importBad');
-          model.bump();
-          return;
-        }
-        model.importOpen = false;
-        model.importText = '';
-        model.importNotice = '';
-        model.showToast(tr('imported') + ' · ' + model.tasks.length);
-      };
-
       // ----- meeting notes: paste a transcript into the shared inbox ----------------
       model.openMeeting = () => {
         model.meetingOpen = true;
@@ -3053,6 +2945,8 @@ window.__ModuleLoader__.load({
                         background: 'var(--dsw-alias-bg-layer-2)',
                         borderRadius: '4px',
                         overflow: 'visible',
+                        display: 'flex',
+                        flexDirection: 'column',
                       },
                     },
                     (editorOpen ? [] : model.tasksFor(cell)).map((task) => {
@@ -3111,7 +3005,20 @@ window.__ModuleLoader__.load({
                       ),
                     );
                     }),
-                    editorOpen ? renderTodoEditor(monthDay(cell)) : null,
+                    editorOpen
+                      ? renderTodoEditor(monthDay(cell))
+                      : h(
+                          'div',
+                          {
+                            className: 'dsh-todo-month-add',
+                            title: tr('addZone'),
+                            onClick: (event) => {
+                              if (event && event.stopPropagation) event.stopPropagation();
+                              model.openEditor(monthDay(cell));
+                            },
+                          },
+                          tr('addZone'),
+                        ),
                   ),
                 );
                 rowItems.push(cellNode);
@@ -3709,57 +3616,6 @@ window.__ModuleLoader__.load({
               )
             : null;
 
-          const importModal = model.importOpen
-            ? h(
-                'div',
-                { className: 'dsh-todo-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) model.closeImport(); } },
-                h(
-                  'div',
-                  { className: 'dsh-todo-modal', role: 'dialog', 'aria-modal': true, 'aria-label': tr('importTitle') },
-                  h(
-                    'div',
-                    { className: 'dsh-todo-modal-head' },
-                    h('h3', null, tr('importTitle')),
-                    h('button', { type: 'button', className: 'dsh-todo-modal-close', 'aria-label': tr('cancel'), onClick: () => model.closeImport() }, '×'),
-                  ),
-                  h('p', { className: 'dsh-todo-muted' }, tr('importHint')),
-                  model.importNotice ? h('p', { className: 'dsh-todo-warn' }, model.importNotice) : null,
-                  h('textarea', {
-                    className: 'dsh-todo-field',
-                    rows: 8,
-                    'data-autogrow': '1',
-                    ref: autoGrowRef,
-                    onInput: autoGrowInput,
-                    placeholder: tr('importPlaceholder'),
-                    value: model.importText,
-                    onChange: (event) => {
-                      model.importText = event.target.value;
-                      model.bump();
-                    },
-                  }),
-                  h(
-                    'select',
-                    {
-                      className: 'dsh-todo-field',
-                      value: model.importMode,
-                      onChange: (event) => {
-                        model.importMode = event.target.value;
-                        model.bump();
-                      },
-                    },
-                    h('option', { key: 'merge', value: 'merge' }, tr('importMerge')),
-                    h('option', { key: 'replace', value: 'replace' }, tr('importReplace')),
-                  ),
-                  h(
-                    'div',
-                    { className: 'dsh-todo-editor-actions' },
-                    h('button', { type: 'button', className: 'dsh-todo-action dsh-todo-primary', onClick: () => model.applyImport() }, tr('importOk')),
-                    h('button', { type: 'button', className: 'dsh-todo-action', onClick: () => model.closeImport() }, tr('cancel')),
-                  ),
-                ),
-              )
-            : null;
-
           const meetingModal = model.meetingOpen
             ? h(
                 'div',
@@ -3938,12 +3794,6 @@ window.__ModuleLoader__.load({
                   'div',
                   { className: 'dsh-todo-head-actions' },
                   h('span', { className: 'dsh-todo-status' }, model.saving ? tr('savingLabel') : tr('saved')),
-                  h(
-                    'button',
-                    { type: 'button', className: 'dsh-todo-btn', disabled: model.syncing, onClick: () => model.syncWorkbench() },
-                    model.syncing ? tr('syncing') : tr('sync'),
-                  ),
-                  h('button', { type: 'button', className: 'dsh-todo-btn', onClick: () => model.openImport() }, tr('import')),
                   h('button', { type: 'button', className: 'dsh-todo-btn dsh-todo-btn--ghost', onClick: backToChat }, tr('backToChat')),
                 ),
               ),
@@ -3989,7 +3839,6 @@ window.__ModuleLoader__.load({
             ),
             taskModal,
             projectModal,
-            importModal,
             meetingModal,
             recordDeleteModal,
             model.highlightBar
